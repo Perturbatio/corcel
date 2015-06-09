@@ -64,16 +64,27 @@ class PostBuilder extends Builder
         return $this->where('post_name', $slug);
     }
 
-    /**
-     * Overrides the paginate() method to a custom and simple way.
-     * 
-     * @param int $perPage
-     * @param int $currentPage
-     * @return \Illuminate\Database\Eloquent\Collection
-     */
-    public function paginate($perPage = 10, $currentPage = 1)
-    {
-        $skip = $currentPage * $perPage - $perPage;
-        return $this->skip($skip)->take($perPage)->get();
-    }
+
+	/**
+	 * Paginate the given query.
+	 *
+	 * @param  int $perPage
+	 * @param  array $columns
+	 * @param  string $pageName
+	 * @return \Illuminate\Contracts\Pagination\LengthAwarePaginator
+	 */
+	public function paginate( $perPage = null, $columns = [ '*' ], $pageName = 'page' ) {
+		$total = $this->query->getCountForPagination();
+
+		$this->query->forPage(
+			$page = Paginator::resolveCurrentPage( $pageName ),
+			$perPage = $perPage ?: $this->model->getPerPage()
+		);
+
+		return new LengthAwarePaginator( $this->get( $columns ), $total, $perPage, $page, [
+			'path'     => Paginator::resolveCurrentPath(),
+			'pageName' => $pageName,
+		] );
+	}
+
 }
